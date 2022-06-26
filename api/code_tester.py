@@ -19,6 +19,7 @@ class handler(BaseHTTPRequestHandler):
         )  # <--- Gets the size of data
         post_data = self.rfile.read(content_length)  # <--- Gets the data itself
 
+        post_data += "\n# Did you get that?"
         self.wfile.write(post_data.encode())
         return
 
