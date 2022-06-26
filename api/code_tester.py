@@ -26,7 +26,7 @@ class handler(BaseHTTPRequestHandler):
         code = payload["code"]
 
         self._set_response()
-        message = str(test_code(code))
+        message = str(code)  # str(test_code(code))
         self.wfile.write(message.encode("utf-8"))
 
         print("all done")
