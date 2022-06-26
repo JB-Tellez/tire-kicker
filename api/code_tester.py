@@ -2,19 +2,16 @@ from importlib.util import module_from_spec, spec_from_loader
 import sys
 import pytest
 from http.server import BaseHTTPRequestHandler
-import logging
+import json
 
 
 class handler(BaseHTTPRequestHandler):
     def _set_response(self):
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header("Content-type", "text/plain")
         self.end_headers()
 
     def do_GET(self):
-        logging.info(
-            "GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers)
-        )
         self._set_response()
         self.wfile.write("GET request for {}".format(self.path).encode("utf-8"))
 
@@ -23,15 +20,18 @@ class handler(BaseHTTPRequestHandler):
             self.headers["Content-Length"]
         )  # <--- Gets the size of data
         post_data = self.rfile.read(content_length)  # <--- Gets the data itself
-        logging.info(
-            "POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
-            str(self.path),
-            str(self.headers),
-            post_data.decode("utf-8"),
-        )
+
+        payload = json.loads(post_data.decode())
+
+        code = payload["code"]
 
         self._set_response()
-        self.wfile.write("POST request for {}".format(self.path).encode("utf-8"))
+        message = str(test_code(code))
+        self.wfile.write(message.encode("utf-8"))
+
+        print("all done")
+
+        sys.exit()
 
 
 def test_code(code):
@@ -42,4 +42,6 @@ def test_code(code):
     exec(code, module.__dict__)
     sys.modules[module_name] = module
 
-    return pytest.main()
+    result = pytest.main()
+
+    return result
