@@ -1,8 +1,8 @@
 from importlib.util import module_from_spec, spec_from_loader
 import sys
-import pytest
 from http.server import BaseHTTPRequestHandler
 import json
+from inspect import getmembers, isfunction
 
 
 class handler(BaseHTTPRequestHandler):
@@ -26,12 +26,11 @@ class handler(BaseHTTPRequestHandler):
         code = payload["code"]
 
         self._set_response()
-        message = str(code)  # str(test_code(code))
+
+        result = test_code(code)
+
+        message = result
         self.wfile.write(message.encode("utf-8"))
-
-        print("all done")
-
-        sys.exit()
 
 
 def test_code(code):
@@ -42,6 +41,17 @@ def test_code(code):
     exec(code, module.__dict__)
     sys.modules[module_name] = module
 
-    result = pytest.main()
+    from api import test_module
 
-    return result
+    members = getmembers(test_module, isfunction)
+
+    for member in members:
+        print(member)
+        if member[0].startswith("test_"):
+            try:
+                member[1]()
+            except AssertionError:
+                print("oh noes")
+                return "error"
+
+    return "all good"
