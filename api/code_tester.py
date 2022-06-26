@@ -5,15 +5,21 @@ from http.server import BaseHTTPRequestHandler
 
 
 class handler(BaseHTTPRequestHandler):
-    def do_GET(self):
+    def do_POST(self):
         self.send_response(200)
         self.send_header("Content-type", "text/plain")
         self.end_headers()
-        code = """
-def add(a, b):
-    return a + b
-        """
-        self.wfile.write(code.encode())
+        #         code = """
+        # def add(a, b):
+        #     return a + b
+        #         """
+
+        content_length = int(
+            self.headers["Content-Length"]
+        )  # <--- Gets the size of data
+        post_data = self.rfile.read(content_length)  # <--- Gets the data itself
+
+        self.wfile.write(post_data.encode())
         return
 
 
