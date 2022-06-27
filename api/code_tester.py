@@ -1,8 +1,11 @@
-from importlib.util import module_from_spec, spec_from_loader
 import sys
+from importlib.util import module_from_spec, spec_from_loader
+from importlib import invalidate_caches, reload, import_module
 from http.server import BaseHTTPRequestHandler
 import json
-from inspect import getmembers, isfunction
+from inspect import getmembers, isfunction, getsource
+
+# from api import test_module
 
 
 class handler(BaseHTTPRequestHandler):
@@ -25,33 +28,67 @@ class handler(BaseHTTPRequestHandler):
 
         code = payload["code"]
 
+        tests = load_tests()
+
         self._set_response()
 
-        result = test_code(code)
+        module_name = "module_under_test"
 
-        message = result
+        module = create_module(code, module_name)
+
+        message = "fine"
+
+        try:
+            exec(tests, {"add": module.add})
+        except AssertionError:
+            message = "ruh roh"
+
         self.wfile.write(message.encode("utf-8"))
 
 
-def test_code(code):
+def create_module(code, module_name):
 
-    module_name = "module_under_test"
-    spec = spec_from_loader("module_under_test", loader=None)
+    if module_name in sys.modules:
+        print("deleting module")
+        del sys.modules[module_name]
+
+    spec = spec_from_loader(module_name, loader=None)
     module = module_from_spec(spec)
+
     exec(code, module.__dict__)
     sys.modules[module_name] = module
 
-    from api import test_module
+    return module
 
-    members = getmembers(test_module, isfunction)
 
-    for member in members:
-        print(member)
-        if member[0].startswith("test_"):
-            try:
-                member[1]()
-            except AssertionError:
-                print("oh noes")
-                return "error"
+def load_tests():
 
-    return "all good"
+    with open("./api/test_module.py") as f:
+        return f.read()
+
+
+#     return """
+# def test_add_two_numbers():
+#     global add
+#     actual = add(3, 5)
+#     expected = 8
+#     assert actual == expected
+
+# test_add_two_numbers()
+
+#         """
+
+
+# def run_tests():
+#     from api import test_module
+
+#     members = getmembers(test_module, isfunction)
+
+#     for member in members:
+#         print(member)
+#         if member[0].startswith("test_"):
+#             try:
+#                 member[1]()
+#             except AssertionError:
+#                 print("oh noes")
+#                 return "error"
